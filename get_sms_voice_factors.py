@@ -7,7 +7,7 @@ base_url = input("Enter Okta tenant base url: ")
 api_token = input("Enter Okta api token: ")
 input_file_path = input("OPTIONAL - Enter input filepath(absolute); DEFAULT - 'input_users.csv' in the same location as script: ") or "input_users.csv"
 gpid_to_continue_from = input("OPTIONAL - Enter user gpid to continue from (if previous operation incomplete, ensure correct output file locationentered); DEFAULT - entire input file used: ")
-output_file_path = input("OPTIONAL - Enter filepath to save output (absolute); DEFAULT - 'User_Factors.csv' in the same location as script: ") or "user_factors.csv"
+output_file_path = input("OPTIONAL - Enter filepath to save output (absolute); DEFAULT - 'user_factors.csv' in the same location as script: ") or "user_factors.csv"
 
 input_user_list = pandas.read_csv(input_file_path, header=0, keep_default_na=False).iloc[:,0]
 
@@ -32,7 +32,7 @@ else:
     if gpid_to_continue_from in input_user_list.values:
         input_user_list = input_user_list[input_user_list[input_user_list == gpid_to_continue_from].index[0]+1:]
     else:
-        print(gpid_to_continue_from,"not found")
+        print(gpid_to_continue_from, "not found, appending current output to", output_file_path)
 
 for user_login in input_user_list:
     try:
