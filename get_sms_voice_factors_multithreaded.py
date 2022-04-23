@@ -55,7 +55,9 @@ def worker_thread():
         try:
             uid = shared_queue.get()
             global total_processed
+            thread_lock.acquire()
             total_processed += 1
+            thread_lock.release()
             if uid is None or uid == "":
                 continue
             id = '0'*int(8-len(str(uid)))+str(uid) if int(8-len(str(uid))) > 0 else str(uid)
@@ -114,7 +116,7 @@ def worker_thread():
             else:
                 update_progress( int((total_processed / input_user_list_size)*100) , "Users processed currently : "+str(total_processed)+"          " )
 
-            if int(limit)-int(remain) > int(limit)*0.5:
+            if int(limit)-int(remain) > int(limit)*0.9:
                 update_progress( int((total_processed / input_user_list_size)*100) , "Waiting for rate limit: "+
                                 str( abs( int(reset) - int(time.time()) ) / 5 )+"s, "+
                                 str(total_processed)+" done " )
@@ -131,11 +133,16 @@ def worker_thread():
         batch_list.to_csv(output_file_path, index=False, header=False, mode='a')
         thread_lock.release()
 
+threads = []
+
 for i in range(number_of_threads):
     t = threading.Thread(target = worker_thread)
+    threads.append(t)
     t.start()
 
-shared_queue.join()
+for t in threads:
+    t.join()
+
 
 execution_end = datetime.datetime.now()
 print("Script execution completed at:", execution_end)
