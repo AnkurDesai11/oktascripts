@@ -5,21 +5,22 @@ api_token = input("Enter Okta api token: ")
 input_file_path = input("OPTIONAL - Enter input filepath(absolute); DEFAULT - 'input_users.csv' in the same location as script: ") or "input_users.csv"
 gpid_to_continue_from = input("OPTIONAL - Enter user gpid to continue from (if previous operation incomplete, ensure correct output file locationentered); DEFAULT - entire input file used: ")
 output_file_path = input("OPTIONAL - Enter filepath to save output (absolute); DEFAULT - 'user_factors.csv' in the same location as script: ") or "user_factors.csv"
-number_of_threads = 3
+number_of_threads = input("OPTIONAL - Enter number of threads to run; DEFAULT - 3 (MIN/MAX - 1/5): ") or 3
 
 headers = {'accept': 'application/json','content-type': 'application/json','authorization' : 'SSWS {}'.format(api_token)}
 output_columns = ["GPID","searchResult", "status", "id", "profile.login", "profile.AD_LDAP_Mapper", "profile.mobilePhone", "profile.countryCode", "profile.idx_countryName", "Factors", "MFA_Voice_Number", "MFA_SMS_Number"]
 batch_list = pandas.DataFrame(columns = output_columns)
 total_processed = 0
 
-execution_start = datetime.datetime.now()
-print("Script execution started at:", execution_start)
-
-input_user_list = pandas.read_csv(input_file_path, header=0, keep_default_na=False).iloc[:,0]
-
 if(not(base_url.split("/", 1)[0] == "https:" or base_url.split("/", 1)[0] == "http:" )):
     base_url = "https://"+base_url
     #print(baseUrl)
+
+input_user_list = pandas.read_csv(input_file_path, header=0, keep_default_na=False).iloc[:,0]
+
+if number_of_threads not in [1,2,3,4,5]:
+    number_of_threads = 3
+    print("Invalid value for number of threads, continuing with",number_of_threads,"threads")
 
 if not gpid_to_continue_from:
     batch_list.to_csv(output_file_path, index=False)
@@ -28,6 +29,9 @@ else:
         input_user_list = input_user_list[input_user_list[input_user_list == gpid_to_continue_from].index[0]+1:]
     else:
         print(gpid_to_continue_from, "not found, appending current output to", output_file_path)
+
+execution_start = datetime.datetime.now()
+print("Script execution started at:", execution_start)
 
 #queue not iterable hence search in series, modify and then load in queue
 input_user_list_size = len(input_user_list)
@@ -116,16 +120,18 @@ def worker_thread():
             else:
                 update_progress( int((total_processed / input_user_list_size)*100) , "Users processed currently : "+str(total_processed)+"          " )
 
-            if int(limit)-int(remain) > int(limit)*0.9:
+            if int(limit)-int(remain) > int(limit)*0.4:
                 update_progress( int((total_processed / input_user_list_size)*100) , "Waiting for rate limit: "+
                                 str( abs( int(reset) - int(time.time()) ) / 5 )+"s, "+
                                 str(total_processed)+" done " )
                 time.sleep(abs( int(reset) - int(time.time()) ) / 5 )
 
+            shared_queue.task_done()
         except Exception as e:
             batch_list = pandas.concat(
                     [batch_list, pandas.DataFrame([[current_uid, "Runtime error", "","","","","","","","","",""]], columns=output_columns)],
                     ignore_index=True)
+            shared_queue.task_done()
             print("Runtime Error: ",e)
 
     if len(batch_list.index) != 50:
@@ -133,17 +139,12 @@ def worker_thread():
         batch_list.to_csv(output_file_path, index=False, header=False, mode='a')
         thread_lock.release()
 
-threads = []
-
 for i in range(number_of_threads):
     t = threading.Thread(target = worker_thread)
-    threads.append(t)
     t.start()
 
-for t in threads:
-    t.join()
-
+shared_queue.join()
 
 execution_end = datetime.datetime.now()
-print("Script execution completed at:", execution_end)
+print("\nScript execution completed at:", execution_end)
 print("Total time taken for script execution:", (execution_end - execution_start))
