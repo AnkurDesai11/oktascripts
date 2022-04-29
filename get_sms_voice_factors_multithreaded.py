@@ -1,10 +1,11 @@
 import datetime, pandas, queue, requests, time, threading, urllib3
-    
+
+append_time = datetime.datetime.now().strftime("%d%b%Y_%H%M%S")
 base_url = input("Enter Okta tenant base url: ")
 api_token = input("Enter Okta api token: ")
 input_file_path = input("OPTIONAL - Enter input filepath(absolute); DEFAULT - 'input_users.csv' in the same location as script: ") or "input_users.csv"
 gpid_to_continue_from = input("OPTIONAL - Enter user gpid to continue from (if previous operation incomplete, ensure correct output file locationentered); DEFAULT - entire input file used: ")
-output_file_path = input("OPTIONAL - Enter filepath to save output (absolute); DEFAULT - 'user_factors.csv' in the same location as script: ") or "user_factors.csv"
+output_file_path = input("OPTIONAL - Enter filepath to save output (absolute); DEFAULT - 'user_factors_[timestamp].csv' in the same location as script: ") or "user_factors_"+append_time+".csv"
 number_of_threads = input("OPTIONAL - Enter number of threads to run; DEFAULT - 3 (MIN/MAX - 1/5): ") or 3
 
 headers = {'accept': 'application/json','content-type': 'application/json','authorization' : 'SSWS {}'.format(api_token)}
@@ -101,8 +102,7 @@ def worker_thread():
 
                     batch_list = pandas.concat([batch_list,current_user_details], ignore_index=True)
                 else:
-                    #current_user_details = pandas.DataFrame([[current_uid, "Not Found", "","","","","","","","","",""]],
-                    #    columns= output_columns)
+                    #current_user_details = pandas.DataFrame([[current_uid, "Not Found", "","","","","","","","","",""]],columns= output_columns)
                     batch_list = pandas.concat(
                         [batch_list, pandas.DataFrame([[current_uid, "User not found", "","","","","","","","","",""]], columns=output_columns)],
                         ignore_index=True)
