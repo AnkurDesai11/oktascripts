@@ -6,7 +6,7 @@ api_token = input("Enter Okta api token: ")
 input_file_path = input("OPTIONAL - Enter input filepath(absolute); DEFAULT - 'input_users.csv' in the same location as script: ") or "input_users.csv"
 gpid_to_continue_from = input("OPTIONAL - Enter user gpid to continue from (if previous operation incomplete, ensure correct output file locationentered); DEFAULT - entire input file used: ")
 output_file_path = input("OPTIONAL - Enter filepath to save output (absolute); DEFAULT - 'user_factors_[timestamp].csv' in the same location as script: ") or "user_factors_"+append_time+".csv"
-number_of_threads = input("OPTIONAL - Enter number of threads to run; DEFAULT - 3 (MIN/MAX - 1/5): ") or 3
+number_of_threads = int(input("OPTIONAL - Enter number of threads to run; DEFAULT - 3 (MIN/MAX - 1/5): ")) or 3
 
 headers = {'accept': 'application/json','content-type': 'application/json','authorization' : 'SSWS {}'.format(api_token)}
 output_columns = ["GPID","searchResult", "status", "id", "profile.login", "profile.AD_LDAP_Mapper", "profile.mobilePhone", "profile.countryCode", "profile.idx_countryName", "Factors", "MFA_Voice_Number", "MFA_SMS_Number"]
@@ -122,9 +122,9 @@ def worker_thread():
 
             if int(limit)-int(remain) > int(limit)*0.4:
                 update_progress( int((total_processed / input_user_list_size)*100) , "Waiting for rate limit: "+
-                                str( abs( int(reset) - int(time.time()) ) / 5 )+"s, "+
+                                str( abs( int(reset) - int(time.time()) ) )+"s, "+
                                 str(total_processed)+" done " )
-                time.sleep(abs( int(reset) - int(time.time()) ) / 5 )
+                time.sleep(abs( int(reset) - int(time.time()) ) )
 
             shared_queue.task_done()
         except Exception as e:
