@@ -1,6 +1,9 @@
-import datetime, pandas, queue, requests, time, threading, urllib3
+import datetime, pandas, queue, requests, sys, time, threading, urllib3
 
 append_time = datetime.datetime.now().strftime("%d%b%Y_%H%M%S")
+f = open(str("log"+append_time+".out"), 'w')
+sys.stdout = f
+
 base_url = input("Enter Okta tenant base url: ")
 api_token = input("Enter Okta api token: ")
 input_file_path = input("OPTIONAL - Enter input filepath(absolute); DEFAULT - 'input_users.csv' in the same location as script: ") or "input_users.csv"
@@ -113,7 +116,12 @@ def worker_thread():
 
             if len(batch_list.index) >= 50:
                 thread_lock.acquire()
-                batch_list.to_csv(output_file_path, index=False, header=False, mode='a')
+                try:
+                    batch_list.to_csv(output_file_path, index=False, header=False, mode='a')
+                except Exception as e:
+                    print("Error while saving to file: ",e)
+                    print(batch_list.to_string())
+                    print(batch_list['uid'].tolist())
                 thread_lock.release()
                 batch_list = batch_list[0:0]
                 update_progress( int((total_processed / input_user_list_size)*100) , "Users written to file : "+str(total_processed)+"              " )
@@ -148,3 +156,5 @@ shared_queue.join()
 execution_end = datetime.datetime.now()
 print("\nScript execution completed at:", execution_end)
 print("Total time taken for script execution:", (execution_end - execution_start))
+
+f.close()
