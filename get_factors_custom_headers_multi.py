@@ -1,7 +1,7 @@
-import datetime, pandas, queue, requests, sys, time, threading, urllib3
+import datetime, logging, pandas, queue, requests, time, threading, urllib3
 
 append_time = datetime.datetime.now().strftime("%d%b%Y_%H%M%S")
-logs = open(str("log"+append_time+".out"), 'w')
+logging.basicConfig(filename=str("log"+append_time+".out"), format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
 
 header_file_path = input("OPTIONAL - Enter header filepath(absolute); SKIP - enter 0 for headers id, status, profile.login; DEFAULT - 'all_headers.csv' in the same location as script: ") or "all_headers.csv"
 selected_columns = []
@@ -59,14 +59,14 @@ else:
 
 execution_start = datetime.datetime.now()
 print("Script execution started at:", execution_start)
-logs.write("Script execution started at: "+execution_start+"\n"+
-            "Okta tenant base url: "+base_url+"\n"+
-            "Okta api token: "+api_token+"\n"+
-            "Input filepath: "+input_file_path+"\n"+
-            "Id to continue from: "+gpid_to_continue_from+"\n"+
-            "Output filepath: "+output_file_path+"\n"+
-            "Number of threads: "+number_of_threads+"\n"
-            )
+logging.info('Script execution started at: %s',execution_start)
+logging.info('Okta tenant base url: %s',base_url)
+logging.info('Okta api token: %s',api_token)
+logging.info('Input filepath: %s',input_file_path)
+logging.info('Id to continue from: %s',gpid_to_continue_from)
+logging.info('Output filepath: %s',output_file_path)
+logging.info('Number of threads: %s',number_of_threads)
+            
 
 #queue not iterable hence search in series, modify and then load in queue
 input_user_list_size = len(input_user_list)
@@ -143,9 +143,9 @@ def worker_thread():
                 try:
                     batch_list.to_csv(output_file_path, index=False, header=False, mode='a')
                 except Exception as e:
-                    logs.write("Error while saving to file: "+e+"\n")
-                    logs.write(batch_list.to_string()+"\n")
-                    logs.write(batch_list['uid'].tolist()+"\n")
+                    logging.warning('Error while saving to file: %s',e)
+                    logging.warning('DF - %s',batch_list.to_string())
+                    logging.warning('List of failed input ids: %s',batch_list['uid'].tolist())
                     print("Error while saving to file: ",e)
                     print(batch_list.to_string())
                     print(batch_list['uid'].tolist())
@@ -185,6 +185,4 @@ shared_queue.join()
 execution_end = datetime.datetime.now()
 print("\nScript execution completed at:", execution_end)
 print("Total time taken for script execution:", (execution_end - execution_start))
-logs.write("Script execution completed at: "+execution_end+"\n")
-
-logs.close()
+logging.warning('Script execution completed at: %s',execution_end)
