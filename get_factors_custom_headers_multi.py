@@ -26,7 +26,7 @@ selected_columns[len(selected_columns):len(selected_columns)] = ["Factors", "MFA
 base_url = input("Enter Okta tenant base url: ")
 api_token = input("Enter Okta api token: ")
 input_file_path = input("OPTIONAL - Enter input filepath(absolute); DEFAULT - 'input_users.csv' in the same location as script: ") or "input_users.csv"
-gpid_to_continue_from = input("OPTIONAL - Enter user gpid to continue from (if previous operation incomplete, ensure correct output file locationentered); DEFAULT - entire input file used: ")
+gpid_to_continue_from = input("OPTIONAL - Enter user gpid to continue from (if previous operation incomplete, ensure correct output file location entered); DEFAULT - entire input file used: ")
 output_file_path = input("OPTIONAL - Enter filepath to save output (absolute); DEFAULT - 'user_factors_[timestamp].csv' in the same location as script: ") or "user_factors_"+append_time+".csv"
 number_of_threads = input("OPTIONAL - Enter number of threads to run; DEFAULT - 3 (MIN/MAX - 1/5): ") or 3
 
@@ -102,6 +102,9 @@ def worker_thread():
             uid="\""+uid+"\""
             endpoint = "{}/api/v1/users?search=profile.email+eq+{}".format(base_url,uid)
             response = requests.get(endpoint, headers=headers, verify = False)
+            limit = response.headers['x-rate-limit-limit']
+            remain = response.headers['x-rate-limit-remaining']
+            reset = response.headers['x-rate-limit-reset']
             if response.status_code==200:
                 if(len(response.json()) != 0):
                     current_user_details = pandas.json_normalize(response.json(), errors='ignore').reindex(columns=selected_columns).fillna('')
@@ -109,9 +112,6 @@ def worker_thread():
                     current_user_details.at[0, 'result'] = "Found"
                     endpoint = "{}/api/v1/users/{}/factors".format(base_url,current_user_details["id"].values[0])
                     response = requests.get(endpoint, headers=headers, verify = False)
-                    limit = response.headers['x-rate-limit-limit']
-                    remain = response.headers['x-rate-limit-remaining']
-                    reset = response.headers['x-rate-limit-reset']
                     if response.status_code==200:
                         if(len(response.json()) != 0):
                             user_mfa_details = pandas.json_normalize(response.json(), errors='ignore')
@@ -135,7 +135,7 @@ def worker_thread():
             else:
                 current_user_details = pandas.DataFrame(columns = selected_columns)
                 current_user_details.at[0, 'uid'] = current_uid
-                current_user_details.at[0, 'result'] = "User not found"
+                current_user_details.at[0, 'result'] = "Unexpected response from users API"
                 batch_list = pandas.concat([batch_list, current_user_details], ignore_index=True)
 
             if len(batch_list.index) >= 50:
@@ -185,4 +185,4 @@ shared_queue.join()
 execution_end = datetime.datetime.now()
 print("\nScript execution completed at:", execution_end)
 print("Total time taken for script execution:", (execution_end - execution_start))
-logging.warning('Script execution completed at: %s',execution_end)
+logging.info('Script execution completed at: %s',execution_end)
