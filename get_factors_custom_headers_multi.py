@@ -69,7 +69,6 @@ logging.info('Id to continue from: %s',gpid_to_continue_from)
 logging.info('Output filepath: %s',output_file_path)
 logging.info('Number of threads: %s',number_of_threads)
             
-
 #queue not iterable hence search in series, modify and then load in queue
 input_user_list_size = len(input_user_list)
 shared_queue = queue.Queue(maxsize=0)
@@ -188,3 +187,4 @@ execution_end = datetime.datetime.now()
 print("\nScript execution completed at:", execution_end)
 print("Total time taken for script execution:", (execution_end - execution_start))
 logging.info('Script execution completed at: %s',execution_end)
+logging.info('Total time taken for script execution: %s',(execution_end - execution_start))
