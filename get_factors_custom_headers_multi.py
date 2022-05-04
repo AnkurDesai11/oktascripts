@@ -1,8 +1,7 @@
 import datetime, pandas, queue, requests, sys, time, threading, urllib3
 
 append_time = datetime.datetime.now().strftime("%d%b%Y_%H%M%S")
-f = open(str("log"+append_time+".out"), 'w')
-sys.stdout = f
+logs = open(str("log"+append_time+".out"), 'w')
 
 header_file_path = input("OPTIONAL - Enter header filepath(absolute); SKIP - enter 0 for headers id, status, profile.login; DEFAULT - 'all_headers.csv' in the same location as script: ") or "all_headers.csv"
 selected_columns = []
@@ -29,7 +28,7 @@ api_token = input("Enter Okta api token: ")
 input_file_path = input("OPTIONAL - Enter input filepath(absolute); DEFAULT - 'input_users.csv' in the same location as script: ") or "input_users.csv"
 gpid_to_continue_from = input("OPTIONAL - Enter user gpid to continue from (if previous operation incomplete, ensure correct output file locationentered); DEFAULT - entire input file used: ")
 output_file_path = input("OPTIONAL - Enter filepath to save output (absolute); DEFAULT - 'user_factors_[timestamp].csv' in the same location as script: ") or "user_factors_"+append_time+".csv"
-number_of_threads = int(input("OPTIONAL - Enter number of threads to run; DEFAULT - 3 (MIN/MAX - 1/5): ")) or 3
+number_of_threads = input("OPTIONAL - Enter number of threads to run; DEFAULT - 3 (MIN/MAX - 1/5): ") or 3
 
 headers = {'accept': 'application/json','content-type': 'application/json','authorization' : 'SSWS {}'.format(api_token)}
 batch_list = pandas.DataFrame(columns = selected_columns)
@@ -41,7 +40,12 @@ if(not(base_url.split("/", 1)[0] == "https:" or base_url.split("/", 1)[0] == "ht
 
 input_user_list = pandas.read_csv(input_file_path, header=0, keep_default_na=False).iloc[:,0]
 
-if number_of_threads not in [1,2,3,4,5]:
+try:
+    number_of_threads = int(number_of_threads)
+    if number_of_threads not in [1,2,3,4,5]:
+        number_of_threads = 3
+        print("Invalid value for number of threads, continuing with",number_of_threads,"threads")
+except:
     number_of_threads = 3
     print("Invalid value for number of threads, continuing with",number_of_threads,"threads")
 
@@ -55,6 +59,14 @@ else:
 
 execution_start = datetime.datetime.now()
 print("Script execution started at:", execution_start)
+logs.write("Script execution started at: "+execution_start+"\n"+
+            "Okta tenant base url: "+base_url+"\n"+
+            "Okta api token: "+api_token+"\n"+
+            "Input filepath: "+input_file_path+"\n"+
+            "Id to continue from: "+gpid_to_continue_from+"\n"+
+            "Output filepath: "+output_file_path+"\n"+
+            "Number of threads: "+number_of_threads+"\n"
+            )
 
 #queue not iterable hence search in series, modify and then load in queue
 input_user_list_size = len(input_user_list)
@@ -114,6 +126,7 @@ def worker_thread():
                         current_user_details.at[0, 'result'] = "Unexpected response from factors API"
 
                     batch_list = pandas.concat([batch_list,current_user_details], ignore_index=True)
+
                 else:
                     current_user_details = pandas.DataFrame(columns = selected_columns)
                     current_user_details.at[0, 'uid'] = current_uid
@@ -130,6 +143,9 @@ def worker_thread():
                 try:
                     batch_list.to_csv(output_file_path, index=False, header=False, mode='a')
                 except Exception as e:
+                    logs.write("Error while saving to file: "+e+"\n")
+                    logs.write(batch_list.to_string()+"\n")
+                    logs.write(batch_list['uid'].tolist()+"\n")
                     print("Error while saving to file: ",e)
                     print(batch_list.to_string())
                     print(batch_list['uid'].tolist())
@@ -146,6 +162,7 @@ def worker_thread():
                 time.sleep(abs( int(reset) - int(time.time()) ) )
 
             shared_queue.task_done()
+
         except Exception as e:
             current_user_details = pandas.DataFrame(columns = selected_columns)
             current_user_details.at[0, 'uid'] = current_uid
@@ -168,5 +185,6 @@ shared_queue.join()
 execution_end = datetime.datetime.now()
 print("\nScript execution completed at:", execution_end)
 print("Total time taken for script execution:", (execution_end - execution_start))
+logs.write("Script execution completed at: "+execution_end+"\n")
 
-f.close()
+logs.close()
