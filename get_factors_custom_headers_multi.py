@@ -56,6 +56,8 @@ else:
         input_user_list = input_user_list[input_user_list[input_user_list == gpid_to_continue_from].index[0]+1:]
     else:
         print(gpid_to_continue_from, "not found, appending current output to", output_file_path)
+    if output_file_path == "user_factors_"+append_time+".csv":
+        batch_list.to_csv(output_file_path, index=False)
 
 execution_start = datetime.datetime.now()
 print("Script execution started at:", execution_start)
