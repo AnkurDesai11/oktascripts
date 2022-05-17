@@ -98,10 +98,10 @@ def worker_thread():
             thread_lock.release()
             if uid is None or uid == "":
                 continue
-            uid = '0'*int(8-len(str(uid)))+str(uid) if int(8-len(str(uid))) > 0 else str(uid)
+            #id = '0'*int(8-len(str(uid)))+str(uid) if int(8-len(str(uid))) > 0 else str(uid)
             current_uid = uid
             uid="\""+uid+"\""
-            endpoint = "{}/api/v1/users?search=profile.AD_LDAP_Mapper+eq+{}+or+profile.idx_Uid+eq+{}+or+profile.AD_SAMAccountName+eq+{}".format(base_url,uid,uid,uid)
+            endpoint = "{}/api/v1/users?search=profile.login+eq+{}".format(base_url,uid)
             response = requests.get(endpoint, headers=headers, verify = False)
             limit = response.headers['x-rate-limit-limit']
             remain = response.headers['x-rate-limit-remaining']
@@ -110,7 +110,7 @@ def worker_thread():
                 if(len(response.json()) != 0):
                     current_user_details = pandas.json_normalize(response.json(), errors='ignore').reindex(columns=selected_columns).fillna('')
                     current_user_details.at[0, 'uid'] = current_uid
-                    current_user_details.at[0, 'result'] = "Found"
+                    current_user_details.at[0, 'result'] = "MFA Found"
                     endpoint = "{}/api/v1/users/{}/factors".format(base_url,current_user_details["id"].values[0])
                     response = requests.get(endpoint, headers=headers, verify = False)
                     if response.status_code==200:

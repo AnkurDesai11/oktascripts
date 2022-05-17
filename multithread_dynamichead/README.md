@@ -6,4 +6,6 @@ As the script is multithreaded, please check the output file (incomplete) to get
 
 DO NOT - enter the last id from the incomplte output file as this may not be necessarily the last processed record (due to multithreading)
 
-EG - if the output file has 125 records processed, enter the 125th id as the 'user id to continue from' optional parameter  
+EG - if the output file has 125 records processed, enter the 125th id as the 'user id to continue from' optional parameter 
+
+Please check if correct attribute is used in the API call (eg either profile.login or profile.email depending on input file)

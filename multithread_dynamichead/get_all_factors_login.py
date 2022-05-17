@@ -21,7 +21,7 @@ selected_columns[0:0] = ["uid", "result"]
 ################################################################
 # CHANGE THE COLUMNS ASSIGNED BELOW TO OPERATION SPECIFIC VALUES
 ################################################################
-#selected_columns[len(selected_columns):len(selected_columns)] = ["Factors", "MFA_Voice_Number", "MFA_SMS_Number"]
+selected_columns[len(selected_columns):len(selected_columns)] = ["Factors", "MFA_Voice_Number", "MFA_SMS_Number"]
 
 base_url = input("Enter Okta tenant base url: ")
 api_token = input("Enter Okta api token: ")
@@ -98,10 +98,10 @@ def worker_thread():
             thread_lock.release()
             if uid is None or uid == "":
                 continue
-            uid = '0'*int(8-len(str(uid)))+str(uid) if int(8-len(str(uid))) > 0 else str(uid)
+            #id = '0'*int(8-len(str(uid)))+str(uid) if int(8-len(str(uid))) > 0 else str(uid)
             current_uid = uid
             uid="\""+uid+"\""
-            endpoint = "{}/api/v1/users?search=profile.AD_LDAP_Mapper+eq+{}+or+profile.idx_Uid+eq+{}+or+profile.AD_SAMAccountName+eq+{}".format(base_url,uid,uid,uid)
+            endpoint = "{}/api/v1/users?search=profile.login+eq+{}".format(base_url,uid)
             response = requests.get(endpoint, headers=headers, verify = False)
             limit = response.headers['x-rate-limit-limit']
             remain = response.headers['x-rate-limit-remaining']
@@ -114,7 +114,14 @@ def worker_thread():
                     endpoint = "{}/api/v1/users/{}/factors".format(base_url,current_user_details["id"].values[0])
                     response = requests.get(endpoint, headers=headers, verify = False)
                     if response.status_code==200:
-                        if(len(response.json()) == 0):
+                        if(len(response.json()) != 0):
+                            user_mfa_details = pandas.json_normalize(response.json(), errors='ignore')
+                            current_user_details.at[0, 'Factors'] = ','.join(user_mfa_details['factorType'])
+                            if 'call' in user_mfa_details.factorType.values:
+                                current_user_details.at[0, 'MFA_Voice_Number'] = str(user_mfa_details[user_mfa_details['factorType'] == "call"]['profile.phoneNumber'].values[0])
+                            if 'sms' in user_mfa_details.factorType.values:
+                                current_user_details.at[0, 'MFA_SMS_Number'] = str(user_mfa_details[user_mfa_details['factorType'] == "sms"]['profile.phoneNumber'].values[0])
+                        else:
                             current_user_details.at[0, 'result'] = "MFA not found"
                     else:
                         current_user_details.at[0, 'result'] = "Unexpected response from factors API"
