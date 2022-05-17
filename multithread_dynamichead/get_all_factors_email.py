@@ -98,7 +98,7 @@ def worker_thread():
             thread_lock.release()
             if uid is None or uid == "":
                 continue
-            id = '0'*int(8-len(str(uid)))+str(uid) if int(8-len(str(uid))) > 0 else str(uid)
+            #id = '0'*int(8-len(str(uid)))+str(uid) if int(8-len(str(uid))) > 0 else str(uid)
             current_uid = uid
             uid="\""+uid+"\""
             endpoint = "{}/api/v1/users?search=profile.email+eq+{}".format(base_url,uid)
