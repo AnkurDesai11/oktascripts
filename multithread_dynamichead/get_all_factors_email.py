@@ -172,7 +172,7 @@ def worker_thread():
             shared_queue.task_done()
             print("Runtime Error: ",e)
 
-    if len(batch_list.index) != 50:
+    if len(batch_list.index) != 0:
         thread_lock.acquire()
         batch_list.to_csv(output_file_path, index=False, header=False, mode='a')
         thread_lock.release()
