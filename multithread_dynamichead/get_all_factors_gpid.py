@@ -28,7 +28,7 @@ api_token = input("Enter Okta api token: ")
 input_file_path = input("OPTIONAL - Enter input filepath(absolute); DEFAULT - 'input_users.csv' in the same location as script: ") or "input_users.csv"
 id_to_continue_from = input("OPTIONAL - Enter user id to continue from (if previous operation incomplete, ensure correct output file location entered); DEFAULT - entire input file used: ")
 output_file_path = input("OPTIONAL - Enter filepath to save output (absolute); DEFAULT - 'user_factors_[timestamp].csv' in the same location as script: ") or "user_factors_"+append_time+".csv"
-number_of_threads = input("OPTIONAL - Enter number of threads to run; DEFAULT - 3 (MIN/MAX - 1/5): ") or 3
+number_of_threads = input("OPTIONAL - Enter number of threads to run; DEFAULT - 5 (MIN/RECOMMENDED/MAX - 1/<10/15): ") or 5
 
 headers = {'accept': 'application/json','content-type': 'application/json','authorization' : 'SSWS {}'.format(api_token)}
 batch_list = pandas.DataFrame(columns = selected_columns)
@@ -42,11 +42,11 @@ input_user_list = pandas.read_csv(input_file_path, header=0, keep_default_na=Fal
 
 try:
     number_of_threads = int(number_of_threads)
-    if number_of_threads not in [1,2,3,4,5]:
-        number_of_threads = 3
+    if number_of_threads not in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]:
+        number_of_threads = 5
         print("Invalid value for number of threads, continuing with",number_of_threads,"threads")
 except:
-    number_of_threads = 3
+    number_of_threads = 5
     print("Invalid value for number of threads, continuing with",number_of_threads,"threads")
 
 if not id_to_continue_from:
