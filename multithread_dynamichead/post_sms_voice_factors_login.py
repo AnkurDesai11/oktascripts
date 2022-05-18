@@ -101,10 +101,10 @@ def worker_thread():
             voice_factor = current_user_details["voice"]
             if uid is None or uid == "":
                 continue
-            uid = '0'*int(8-len(str(uid)))+str(uid) if int(8-len(str(uid))) > 0 else str(uid)
+            #uid = '0'*int(8-len(str(uid)))+str(uid) if int(8-len(str(uid))) > 0 else str(uid)
             current_uid = uid
             uid="\""+uid+"\""
-            endpoint = "{}/api/v1/users?search=profile.AD_LDAP_Mapper+eq+{}+or+profile.idx_Uid+eq+{}+or+profile.AD_SAMAccountName+eq+{}".format(base_url,uid,uid,uid)
+            endpoint = "{}/api/v1/users?search=profile.login+eq+{}".format(base_url,uid)
             response = requests.get(endpoint, headers=headers, verify = False)
             limit = response.headers['x-rate-limit-limit']
             remain = response.headers['x-rate-limit-remaining']
