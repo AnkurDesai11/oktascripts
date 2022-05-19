@@ -29,6 +29,7 @@ input_file_path = input("OPTIONAL - Enter input filepath(absolute); DEFAULT - 'i
 id_to_continue_from = input("OPTIONAL - Enter user id to continue from (if previous operation incomplete, ensure correct output file location entered); DEFAULT - entire input file used: ")
 output_file_path = input("OPTIONAL - Enter filepath to save output (absolute); DEFAULT - 'user_factors_[timestamp].csv' in the same location as script: ") or "user_factors_"+append_time+".csv"
 number_of_threads = input("OPTIONAL - Enter number of threads to run; DEFAULT - 5 (MIN/RECOMMENDED/MAX - 1/<10/15): ") or 5
+max_rate_limit = input("OPTIONAL - Enter max rate limit to consume; DEFAULT - 0.4 (MIN/MAX - 0.2/0.6): ") or 0.4
 
 headers = {'accept': 'application/json','content-type': 'application/json','authorization' : 'SSWS {}'.format(api_token)}
 batch_list = pandas.DataFrame(columns = selected_columns)
@@ -48,6 +49,15 @@ try:
 except:
     number_of_threads = 5
     print("Invalid value for number of threads, continuing with",number_of_threads,"threads")
+
+try:
+    max_rate_limit = float(max_rate_limit)
+    if not 0.2 <= max_rate_limit <= 0.6:
+        max_rate_limit = 0.4
+        print("Invalid value for max rate limit to consume, continuing with",max_rate_limit)
+except:
+    max_rate_limit = 0.4
+    print("Invalid value for max rate limit to consume, continuing with",max_rate_limit)
 
 if not id_to_continue_from:
     batch_list.to_csv(output_file_path, index=False)
@@ -83,10 +93,9 @@ def update_progress(progress, message):
     print('\r[ {0}{1} ] {2}% {3}'.format('#' * int(progress/2), ' ' * int(50 - progress/2), progress, message),end="")
 
 def worker_thread():
-    user_details = {}
-    rate_limit = 0
-    rate_remaining = 0
-    rate_reset = 0
+    limit = 0
+    remain = 0
+    reset = 0
     batch_list = pandas.DataFrame(columns = selected_columns)
     current_uid=""
     while not shared_queue.empty():
@@ -162,7 +171,7 @@ def worker_thread():
             else:
                 update_progress( int((total_processed / input_user_list_size)*100) , "Users processed currently : "+str(total_processed)+"          " )
 
-            if int(limit)-int(remain) > int(limit)*0.4:
+            if int(limit)-int(remain) > int(limit)*max_rate_limit:
                 update_progress( int((total_processed / input_user_list_size)*100) , "Waiting for rate limit: "+
                                 str( abs( int(reset) - int(time.time()) ) )+"s, "+
                                 str(total_processed)+" done " )
