@@ -26,7 +26,7 @@ selected_columns[0:0] = ["uid", "result"]
 base_url = input("Enter Okta tenant base url: ")
 api_token = input("Enter Okta api token: ")
 input_file_path = input("OPTIONAL - Enter input filepath(absolute); DEFAULT - 'input_users.csv' in the same location as script: ") or "input_users.csv"
-id_to_continue_from = input("OPTIONAL - Enter user id to continue from (if previous operation incomplete, ensure correct output file location entered) WARNING: SCRIPT IS MULTITHREADED, USE INDEX OF LAST ID IN OUTPUT FILE; DEFAULT - entire input file used: ")
+id_to_continue_from = input("OPTIONAL - Enter user id to continue from (if previous operation incomplete, ensure correct output file location entered) WARNING: SCRIPT IS MULTITHREADED, USE INDEX OF LAST ID IN OUTPUT FILE TO GET CORRECT UID; DEFAULT - entire input file used: ")
 output_file_path = input("OPTIONAL - Enter filepath to save output (absolute); DEFAULT - 'user_updates_[timestamp].csv' in the same location as script: ") or "user_updates_"+append_time+".csv"
 number_of_threads = input("OPTIONAL - Enter number of threads to run; DEFAULT - 5 (MIN/RECOMMENDED/MAX - 1/<10/15): ") or 5
 max_rate_limit = input("OPTIONAL - Enter max rate limit to consume; DEFAULT - 0.4 (MIN/MAX - 0.2/0.6): ") or 0.4
@@ -153,10 +153,10 @@ def worker_thread():
                     if response1.status_code==200:
                         current_user_details_recieved.at[0, 'Update_Status'] = response1.json()["status"]
                     else:
-                        current_user_details.at[0, 'Update_Status'] = response1.json()["errorCauses"][0]["errorSummary"] if "errorSummary" in response1.json()["errorCauses"][0] else response1.json()["errorSummary"]
+                        current_user_details_recieved.at[0, 'Update_Status'] = response1.json()["errorCauses"][0]["errorSummary"] if "errorSummary" in response1.json()["errorCauses"][0] else response1.json()["errorSummary"]
                     
 
-                    batch_list = pandas.concat([batch_list,current_user_details], ignore_index=True)
+                    batch_list = pandas.concat([batch_list,current_user_details_recieved], ignore_index=True)
 
                 else:
                     current_user_details = pandas.DataFrame(columns = selected_columns)
