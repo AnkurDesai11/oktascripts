@@ -1,6 +1,6 @@
 #Instructions
 
-All scripts are multithreaded and the python process may have to teerminated using task manager to stop the script while its running
+All scripts are multithreaded and the python process may have to terminated using task manager to stop the script while its running
 
 As the script is multithreaded, please check the output file (incomplete) to get the total number of ids processed and accordingly enter the id at that position from the input file if you wish to continue from that point
 
