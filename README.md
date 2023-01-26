@@ -1,4 +1,4 @@
-# Oktas Automation Scripts
+# Okta Automation Scripts
 
 Python scripts to perform bulk actions using okta apis.
 
